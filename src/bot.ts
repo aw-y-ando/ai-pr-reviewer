@@ -98,8 +98,12 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
         ],
         temperature: this.options.openaiModelTemperature
       })
+      // Debug: log full SDK response to compare shapes with chatgpt response
+      info(`openaiClient SDK response: ${JSON.stringify(resp)}`)
       const text = resp.choices?.[0]?.message?.content ?? ''
-      return [text, {}]
+      const newIds: Ids = { parentMessageId: resp.id, conversationId: resp.id }
+      info(`openaiClient newIds: ${JSON.stringify(newIds)}`)
+      return [text, newIds]
     }
     let response: ChatMessage | undefined
 
