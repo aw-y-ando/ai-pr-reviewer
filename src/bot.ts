@@ -95,19 +95,21 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
       // Debug: log request payload for OpenAI SDK
       info(`openai SDK request: model=${this.model}, temperature=${this.options.openaiModelTemperature}`)
       // official OpenAI SDK for experimental models with retry and error handling
-      let resp
+      let resp: any
       try {
         resp = await pRetry(
           () => {
             info(`OpenAI SDK create attempt`)
-            return this.openaiClient!.chat.completions.create({
+            // experimental models only support default temperature, omit custom temperature
+            const payload = {
               model: this.model,
               messages: [
                 { role: 'system', content: this.systemMessageContent },
                 { role: 'user', content: message }
-              ],
-              temperature: this.options.openaiModelTemperature
-            })
+              ]
+            }
+            // @ts-ignore: bypass SDK type strictness for experimental model payload
+            return this.openaiClient!.chat.completions.create(payload)
           },
           {
             retries: this.options.openaiRetries,
