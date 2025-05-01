@@ -88,55 +88,20 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
     if (!message) return ['', {}]
 
     // branch by client
-    info(`experimentalModels configured: ${JSON.stringify(this.options.experimentalModels)}`)
     if (this.openaiClient) {
-      info(`model? : ` + this.model)
-      info(`openaiClient? : ` + this.openaiClient?.apiKey)
-      // Debug: log request payload for OpenAI SDK
-      info(`openai SDK request: model=${this.model}, temperature=${this.options.openaiModelTemperature}`)
-      // official OpenAI SDK for experimental models with retry and error handling
-      let resp: any
-      try {
-        resp = await pRetry(
-          () => {
-            info(`OpenAI SDK create attempt`)
-            // experimental models only support default temperature, omit custom temperature
-            const payload = {
-              model: this.model,
-              messages: [
-                { role: 'system', content: this.systemMessageContent },
-                { role: 'user', content: message }
-              ]
-            }
-            // @ts-ignore: bypass SDK type strictness for experimental model payload
-            return this.openaiClient!.chat.completions.create(payload)
-          },
-          {
-            retries: this.options.openaiRetries,
-            onFailedAttempt: error => {
-              info(
-                `OpenAI SDK attempt ${error.attemptNumber} failed, ${error.retriesLeft} retries left. error: ${error.message}`
-              )
-            }
-          }
-        )
-      } catch (e: unknown) {
-        warning(
-          `OpenAI SDK final failure: ${
-            e && typeof e === 'object' ? JSON.stringify(e, Object.getOwnPropertyNames(e)) : e
-          }`
-        )
-        warning(`Stack: ${e instanceof Error ? e.stack : ''}`)
-        return ['', {}]
-      }
-      // Debug: log full SDK response to compare shapes with chatgpt response
-      info(`openaiClient SDK response: ${JSON.stringify(resp)}`)
+      // official OpenAI SDK for experimental models
+      const resp = await this.openaiClient.chat.completions.create({
+        model: this.model,
+        messages: [
+          { role: 'system', content: this.systemMessageContent },
+          { role: 'user', content: message }
+        ]
+      })
       const text = resp.choices?.[0]?.message?.content ?? ''
-      // preserve conversationId if continuing, otherwise start new
-      const parentMessageId = resp.id
-      const conversationId = ids.conversationId ?? resp.id
-      const newIds: Ids = { parentMessageId, conversationId }
-      info(`openaiClient newIds: ${JSON.stringify(newIds)}`)
+      const newIds: Ids = {
+        parentMessageId: resp.id,
+        conversationId: ids.conversationId ?? resp.id
+      }
       return [text, newIds]
     }
     let response: ChatMessage | undefined
