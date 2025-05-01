@@ -88,6 +88,7 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
     if (!message) return ['', {}]
 
     // branch by client
+    info(`openaiClient? : ` + this.openaiClient)
     if (this.openaiClient) {
       // official OpenAI SDK for experimental models
       const resp = await this.openaiClient.chat.completions.create({
@@ -101,7 +102,10 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
       // Debug: log full SDK response to compare shapes with chatgpt response
       info(`openaiClient SDK response: ${JSON.stringify(resp)}`)
       const text = resp.choices?.[0]?.message?.content ?? ''
-      const newIds: Ids = { parentMessageId: resp.id, conversationId: resp.id }
+      // preserve conversationId if continuing, otherwise start new
+      const parentMessageId = resp.id
+      const conversationId = ids.conversationId ?? resp.id
+      const newIds: Ids = { parentMessageId, conversationId }
       info(`openaiClient newIds: ${JSON.stringify(newIds)}`)
       return [text, newIds]
     }
