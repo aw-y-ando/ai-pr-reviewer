@@ -96,7 +96,7 @@ export class Options {
   }
 
   isExperimentalModel(model: string): boolean {
-    return this.experimentalModels.includes(model)
+        return this.experimentalModels.includes(model)
   }
 }
 
