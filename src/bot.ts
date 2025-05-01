@@ -95,11 +95,14 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
         messages: [
           { role: 'system', content: this.systemMessageContent },
           { role: 'user', content: message }
-        ],
-        temperature: this.options.openaiModelTemperature
+        ]
       })
       const text = resp.choices?.[0]?.message?.content ?? ''
-      return [text, {}]
+      const newIds: Ids = {
+        parentMessageId: resp.id,
+        conversationId: ids.conversationId ?? resp.id
+      }
+      return [text, newIds]
     }
     let response: ChatMessage | undefined
 
