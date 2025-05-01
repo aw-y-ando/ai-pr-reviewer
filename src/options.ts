@@ -22,6 +22,7 @@ export class Options {
   heavyTokenLimits: TokenLimits
   apiBaseUrl: string
   language: string
+  experimentalModels: string[]
 
   constructor(
     debug: boolean,
@@ -40,7 +41,8 @@ export class Options {
     openaiConcurrencyLimit = '6',
     githubConcurrencyLimit = '6',
     apiBaseUrl = 'https://api.openai.com/v1',
-    language = 'ja-JP'
+    language = 'ja-JP',
+    experimentalModelsInput: string[] | null = null
   ) {
     this.debug = debug
     this.disableReview = disableReview
@@ -61,6 +63,7 @@ export class Options {
     this.heavyTokenLimits = new TokenLimits(openaiHeavyModel)
     this.apiBaseUrl = apiBaseUrl
     this.language = language
+    this.experimentalModels = experimentalModelsInput ?? []
   }
 
   // print all options using core.info
@@ -90,6 +93,10 @@ export class Options {
     const ok = this.pathFilters.check(path)
     info(`checking path: ${path} => ${ok}`)
     return ok
+  }
+
+  isExperimentalModel(model: string): boolean {
+    return this.experimentalModels.includes(model)
   }
 }
 
