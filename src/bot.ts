@@ -88,18 +88,45 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
     if (!message) return ['', {}]
 
     // branch by client
-    info(`model? : ` + this.model)
-    info(`openaiClient? : ` + this.openaiClient?.apiKey)
+    info(`experimentalModels configured: ${JSON.stringify(this.options.experimentalModels)}`)
     if (this.openaiClient) {
-      // official OpenAI SDK for experimental models
-      const resp = await this.openaiClient.chat.completions.create({
-        model: this.model,
-        messages: [
-          { role: 'system', content: this.systemMessageContent },
-          { role: 'user', content: message }
-        ],
-        temperature: this.options.openaiModelTemperature
-      })
+      info(`model? : ` + this.model)
+      info(`openaiClient? : ` + this.openaiClient?.apiKey)
+      // Debug: log request payload for OpenAI SDK
+      info(`openai SDK request: model=${this.model}, temperature=${this.options.openaiModelTemperature}`)
+      // official OpenAI SDK for experimental models with retry and error handling
+      let resp
+      try {
+        resp = await pRetry(
+          () => {
+            info(`OpenAI SDK create attempt`)
+            return this.openaiClient!.chat.completions.create({
+              model: this.model,
+              messages: [
+                { role: 'system', content: this.systemMessageContent },
+                { role: 'user', content: message }
+              ],
+              temperature: this.options.openaiModelTemperature
+            })
+          },
+          {
+            retries: this.options.openaiRetries,
+            onFailedAttempt: error => {
+              info(
+                `OpenAI SDK attempt ${error.attemptNumber} failed, ${error.retriesLeft} retries left. error: ${error.message}`
+              )
+            }
+          }
+        )
+      } catch (e: unknown) {
+        warning(
+          `OpenAI SDK final failure: ${
+            e && typeof e === 'object' ? JSON.stringify(e, Object.getOwnPropertyNames(e)) : e
+          }`
+        )
+        warning(`Stack: ${e instanceof Error ? e.stack : ''}`)
+        return ['', {}]
+      }
       // Debug: log full SDK response to compare shapes with chatgpt response
       info(`openaiClient SDK response: ${JSON.stringify(resp)}`)
       const text = resp.choices?.[0]?.message?.content ?? ''
