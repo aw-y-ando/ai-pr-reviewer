@@ -88,7 +88,8 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
     if (!message) return ['', {}]
 
     // branch by client
-    info(`openaiClient? : ` + this.openaiClient)
+    info(`model? : ` + this.model)
+    info(`openaiClient? : ` + this.openaiClient?.apiKey)
     if (this.openaiClient) {
       // official OpenAI SDK for experimental models
       const resp = await this.openaiClient.chat.completions.create({
