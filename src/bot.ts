@@ -8,6 +8,7 @@ import {
   SendMessageOptions
   // eslint-disable-next-line import/no-unresolved
 } from 'chatgpt'
+import OpenAI from 'openai'
 import pRetry from 'p-retry'
 import {OpenAIOptions, Options} from './options'
 
@@ -18,24 +19,42 @@ export interface Ids {
 }
 
 export class Bot {
-  private readonly api: ChatGPTAPI | null = null // not free
+  private readonly api: ChatGPTAPI | null = null // existing ChatGPTAPI client
+  private readonly openaiClient: OpenAI | null = null // new OpenAI SDK client
+  private readonly model: string // model name
+  private readonly systemMessageContent: string // system message for both clients
 
   private readonly options: Options
 
   constructor(options: Options, openaiOptions: OpenAIOptions) {
     this.options = options
-    if (process.env.OPENAI_API_KEY) {
-      const currentDate = new Date().toISOString().split('T')[0]
-      const systemMessage = `${options.systemMessage} 
+    this.model = openaiOptions.model
+    // build common system message with cutoff and date
+    const currentDate = new Date().toISOString().split('T')[0]
+    this.systemMessageContent = `${options.systemMessage}
 Knowledge cutoff: ${openaiOptions.tokenLimits.knowledgeCutOff}
 Current date: ${currentDate}
 
 IMPORTANT: Entire response must be in the language with ISO code: ${options.language}
 `
-
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error(
+        "OPENAI_API_KEY is missing, cannot initialize OpenAI clients"
+      )
+    }
+    // choose client based on experimental model list
+    if (options.isExperimentalModel(openaiOptions.model)) {
+      // use official OpenAI SDK for experimental models
+      this.openaiClient = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+        baseURL: options.apiBaseUrl
+      })
+    } else {
+      // use ChatGPTAPI for existing models
+      // pass prepared system message
       this.api = new ChatGPTAPI({
         apiBaseUrl: options.apiBaseUrl,
-        systemMessage,
+        systemMessage: this.systemMessageContent,
         apiKey: process.env.OPENAI_API_KEY,
         apiOrg: process.env.OPENAI_API_ORG ?? undefined,
         debug: options.debug,
@@ -43,26 +62,20 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
         maxResponseTokens: openaiOptions.tokenLimits.responseTokens,
         completionParams: {
           temperature: options.openaiModelTemperature,
-          model: openaiOptions.model
+          model: this.model
         }
       })
-    } else {
-      const err =
-        "Unable to initialize the OpenAI API, both 'OPENAI_API_KEY' environment variable are not available"
-      throw new Error(err)
     }
   }
 
   chat = async (message: string, ids: Ids): Promise<[string, Ids]> => {
-    let res: [string, Ids] = ['', {}]
     try {
-      res = await this.chat_(message, ids)
-      return res
+      return await this.chat_(message, ids)
     } catch (e: unknown) {
       if (e instanceof ChatGPTError) {
         warning(`Failed to chat: ${e}, backtrace: ${e.stack}`)
       }
-      return res
+      return ['', {}]
     }
   }
 
@@ -72,10 +85,22 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
   ): Promise<[string, Ids]> => {
     // record timing
     const start = Date.now()
-    if (!message) {
-      return ['', {}]
-    }
+    if (!message) return ['', {}]
 
+    // branch by client
+    if (this.openaiClient) {
+      // official OpenAI SDK for experimental models
+      const resp = await this.openaiClient.chat.completions.create({
+        model: this.model,
+        messages: [
+          { role: 'system', content: this.systemMessageContent },
+          { role: 'user', content: message }
+        ],
+        temperature: this.options.openaiModelTemperature
+      })
+      const text = resp.choices?.[0]?.message?.content ?? ''
+      return [text, {}]
+    }
     let response: ChatMessage | undefined
 
     if (this.api != null) {
