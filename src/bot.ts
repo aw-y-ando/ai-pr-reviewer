@@ -44,16 +44,9 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
         'OPENAI_API_KEY is missing, cannot initialize OpenAI clients'
       )
     }
-    // choose client based on experimental model list
-    if (options.isExperimentalModel(openaiOptions.model)) {
-      // use official OpenAI SDK for experimental models
-      this.openaiClient = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-        baseURL: options.apiBaseUrl
-      })
-    } else {
-      // use ChatGPTAPI for existing models
-      // pass prepared system message
+    // choose client based on model type
+    if (options.isChatGptApiModel(openaiOptions.model)) {
+      // use ChatGPTAPI for specific models (gpt-4.1 series)
       this.api = new ChatGPTAPI({
         apiBaseUrl: options.apiBaseUrl,
         systemMessage: this.systemMessageContent,
@@ -66,6 +59,12 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
           temperature: options.openaiModelTemperature,
           model: this.model
         }
+      })
+    } else {
+      // use official OpenAI SDK for all other models (gpt-5 series, etc.)
+      this.openaiClient = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+        baseURL: options.apiBaseUrl
       })
     }
   }
@@ -92,16 +91,25 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
     // branch by client
     if (this.openaiClient) {
       // official OpenAI SDK for experimental models
-      const resp = await this.openaiClient.chat.completions.create({
+      const requestParams: any = {
         model: this.model,
         messages: [
           {role: 'system', content: this.systemMessageContent},
           {role: 'user', content: message}
         ],
         // eslint-disable-next-line camelcase
-        max_completion_tokens: this.openaiOptions.tokenLimits.maxTokens,
-        temperature: this.options.openaiModelTemperature
-      })
+        max_completion_tokens: this.openaiOptions.tokenLimits.responseTokens
+      }
+
+      // GPT-5系モデルはtemperature=0をサポートしていないため、デフォルト値を使用
+      const gpt5Models = ['gpt-5', 'gpt-5-mini', 'gpt-5-nano']
+      if (!gpt5Models.some(model => this.model.includes(model))) {
+        requestParams.temperature = this.options.openaiModelTemperature
+      }
+
+      const resp = await this.openaiClient.chat.completions.create(
+        requestParams
+      )
       const text = resp.choices?.[0]?.message?.content ?? ''
       const newIds: Ids = {
         parentMessageId: resp.id,

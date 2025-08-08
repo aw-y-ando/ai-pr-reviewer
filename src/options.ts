@@ -23,6 +23,7 @@ export class Options {
   apiBaseUrl: string
   language: string
   experimentalModels: string[]
+  chatGptApiModels: string[] // ChatGPTAPIを使用するモデルのリスト
 
   constructor(
     debug: boolean,
@@ -63,6 +64,11 @@ export class Options {
     this.heavyTokenLimits = new TokenLimits(openaiHeavyModel)
     this.apiBaseUrl = apiBaseUrl
     this.language = language
+
+    // ChatGPTAPIを使用する特定のモデルを定義
+    this.chatGptApiModels = ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano']
+
+    // experimentalModelsは後方互換性のために残すが、実際の判定はchatGptApiModelsを使用
     this.experimentalModels = experimentalModelsInput ?? [
       'gpt-5-mini',
       'gpt-5',
@@ -91,6 +97,8 @@ export class Options {
     info(`review_token_limits: ${this.heavyTokenLimits.string()}`)
     info(`api_base_url: ${this.apiBaseUrl}`)
     info(`language: ${this.language}`)
+    info(`experimental_models: ${JSON.stringify(this.experimentalModels)}`)
+    info(`chatgpt_api_models: ${JSON.stringify(this.chatGptApiModels)}`)
   }
 
   checkPath(path: string): boolean {
@@ -99,8 +107,18 @@ export class Options {
     return ok
   }
 
+  /**
+   * ChatGPTAPIを使用すべきモデルかどうかを判定
+   */
+  isChatGptApiModel(model: string): boolean {
+    return this.chatGptApiModels.includes(model)
+  }
+
+  /**
+   * 後方互換性のために残す（実際にはisChatGptApiModelの逆を返す）
+   */
   isExperimentalModel(model: string): boolean {
-    return this.experimentalModels.includes(model)
+    return !this.isChatGptApiModel(model)
   }
 }
 
