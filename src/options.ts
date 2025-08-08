@@ -97,7 +97,6 @@ export class Options {
     info(`review_token_limits: ${this.heavyTokenLimits.string()}`)
     info(`api_base_url: ${this.apiBaseUrl}`)
     info(`language: ${this.language}`)
-    info(`experimental_models: ${JSON.stringify(this.experimentalModels)}`)
     info(`chatgpt_api_models: ${JSON.stringify(this.chatGptApiModels)}`)
   }
 
