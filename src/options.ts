@@ -22,8 +22,7 @@ export class Options {
   heavyTokenLimits: TokenLimits
   apiBaseUrl: string
   language: string
-  experimentalModels: string[]
-  chatGptApiModels: string[] // ChatGPTAPIを使用するモデルのリスト
+  oldChatGptApiModels: string[] // ChatGPTAPIを使用するモデルのリスト
 
   constructor(
     debug: boolean,
@@ -42,8 +41,7 @@ export class Options {
     openaiConcurrencyLimit = '6',
     githubConcurrencyLimit = '6',
     apiBaseUrl = 'https://api.openai.com/v1',
-    language = 'ja-JP',
-    experimentalModelsInput: string[] | null = null
+    language = 'ja-JP'
   ) {
     this.debug = debug
     this.disableReview = disableReview
@@ -66,14 +64,8 @@ export class Options {
     this.language = language
 
     // ChatGPTAPIを使用する特定のモデルを定義
-    this.chatGptApiModels = ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano']
-
-    // experimentalModelsは後方互換性のために残すが、実際の判定はchatGptApiModelsを使用
-    this.experimentalModels = experimentalModelsInput ?? [
-      'gpt-5-mini',
-      'gpt-5',
-      'gpt-5-nano'
-    ]
+    // gpt-5系以降は公式OpenAI SDK(v5)を使用するためここには含めない
+    this.oldChatGptApiModels = ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano']
   }
 
   // print all options using core.info
@@ -97,7 +89,7 @@ export class Options {
     info(`review_token_limits: ${this.heavyTokenLimits.string()}`)
     info(`api_base_url: ${this.apiBaseUrl}`)
     info(`language: ${this.language}`)
-    info(`chatgpt_api_models: ${JSON.stringify(this.chatGptApiModels)}`)
+    info(`chatgpt_api_models: ${JSON.stringify(this.oldChatGptApiModels)}`)
   }
 
   checkPath(path: string): boolean {
@@ -107,17 +99,10 @@ export class Options {
   }
 
   /**
-   * ChatGPTAPIを使用すべきモデルかどうかを判定
+   * 旧ChatGPTAPIを使用すべきモデルかどうかを判定
    */
-  isChatGptApiModel(model: string): boolean {
-    return this.chatGptApiModels.includes(model)
-  }
-
-  /**
-   * 後方互換性のために残す（実際にはisChatGptApiModelの逆を返す）
-   */
-  isExperimentalModel(model: string): boolean {
-    return !this.isChatGptApiModel(model)
+  isOldChatGptApiModel(model: string): boolean {
+    return this.oldChatGptApiModels.includes(model)
   }
 }
 

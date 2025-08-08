@@ -45,7 +45,7 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
       )
     }
     // choose client based on model type
-    if (options.isChatGptApiModel(openaiOptions.model)) {
+    if (options.isOldChatGptApiModel(openaiOptions.model)) {
       // use ChatGPTAPI for specific models (gpt-4.1 series)
       this.api = new ChatGPTAPI({
         apiBaseUrl: options.apiBaseUrl,
@@ -91,7 +91,7 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
     // branch by client
     if (this.openaiClient) {
       // official OpenAI SDK for experimental models
-      const requestParams: any = {
+      const requestParams: OpenAI.Chat.Completions.ChatCompletionCreateParams = {
         model: this.model,
         messages: [
           {role: 'system', content: this.systemMessageContent},
