@@ -22,7 +22,7 @@ export class Options {
   heavyTokenLimits: TokenLimits
   apiBaseUrl: string
   language: string
-  oldLLMModels: string[]
+  oldLLMModelPrefixes: string[]
 
   constructor(
     debug: boolean,
@@ -42,7 +42,7 @@ export class Options {
     githubConcurrencyLimit = '6',
     apiBaseUrl = 'https://api.openai.com/v1',
     language = 'ja-JP',
-    oldLLMModels: string[] | null = null
+    oldLLMModelPrefixes: string[] | null = null
   ) {
     this.debug = debug
     this.disableReview = disableReview
@@ -63,7 +63,7 @@ export class Options {
     this.heavyTokenLimits = new TokenLimits(openaiHeavyModel)
     this.apiBaseUrl = apiBaseUrl
     this.language = language
-    this.oldLLMModels = ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano']
+    this.oldLLMModelPrefixes = ['gpt-3.5', 'gpt-4.1']
   }
 
   // print all options using core.info
@@ -96,7 +96,7 @@ export class Options {
   }
 
   isOldLLMModel(model: string): boolean {
-    return this.oldLLMModels.includes(model)
+    return this.oldLLMModelPrefixes.some(prefix => model.startsWith(prefix));
   }
 }
 
