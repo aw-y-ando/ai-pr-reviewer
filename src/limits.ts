@@ -4,7 +4,7 @@ export class TokenLimits {
   responseTokens: number
   knowledgeCutOff: string
 
-  constructor(model = 'gpt-4.1-mini') {
+  constructor(model = 'gpt-5-mini') {
     this.knowledgeCutOff = '2021-09-01'
     if (model === 'gpt-4.1') {
       this.maxTokens = 30000

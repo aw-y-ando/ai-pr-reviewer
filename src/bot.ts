@@ -25,9 +25,11 @@ export class Bot {
   private readonly systemMessageContent: string // system message for both clients
 
   private readonly options: Options
+  private readonly openaiOptions: OpenAIOptions
 
   constructor(options: Options, openaiOptions: OpenAIOptions) {
     this.options = options
+    this.openaiOptions = openaiOptions
     this.model = openaiOptions.model
     // build common system message with cutoff and date
     const currentDate = new Date().toISOString().split('T')[0]
@@ -39,12 +41,12 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
 `
     if (!process.env.OPENAI_API_KEY) {
       throw new Error(
-        "OPENAI_API_KEY is missing, cannot initialize OpenAI clients"
+        'OPENAI_API_KEY is missing, cannot initialize OpenAI clients'
       )
     }
-    // choose client based on experimental model list
-    if (options.isExperimentalModel(openaiOptions.model)) {
-      // use official OpenAI SDK for experimental models
+    // choose client based on not old LLM model list
+    if (!options.isOldLLMModel(openaiOptions.model)) {
+      // use official OpenAI SDK
       this.openaiClient = new OpenAI({
         apiKey: process.env.OPENAI_API_KEY,
         baseURL: options.apiBaseUrl
@@ -93,9 +95,11 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
       const resp = await this.openaiClient.chat.completions.create({
         model: this.model,
         messages: [
-          { role: 'system', content: this.systemMessageContent },
-          { role: 'user', content: message }
-        ]
+          {role: 'system', content: this.systemMessageContent},
+          {role: 'user', content: message}
+        ],
+        // eslint-disable-next-line camelcase
+        max_completion_tokens: this.openaiOptions.tokenLimits.responseTokens
       })
       const text = resp.choices?.[0]?.message?.content ?? ''
       const newIds: Ids = {
