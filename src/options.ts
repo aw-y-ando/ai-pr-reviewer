@@ -63,7 +63,11 @@ export class Options {
     this.heavyTokenLimits = new TokenLimits(openaiHeavyModel)
     this.apiBaseUrl = apiBaseUrl
     this.language = language
-    this.experimentalModels = experimentalModelsInput ?? []
+    this.experimentalModels = experimentalModelsInput ?? [
+      'gpt-5-mini',
+      'gpt-5',
+      'gpt-5-nano'
+    ]
   }
 
   // print all options using core.info
@@ -96,7 +100,7 @@ export class Options {
   }
 
   isExperimentalModel(model: string): boolean {
-        return this.experimentalModels.includes(model)
+    return this.experimentalModels.includes(model)
   }
 }
 
