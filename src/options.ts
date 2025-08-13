@@ -22,7 +22,7 @@ export class Options {
   heavyTokenLimits: TokenLimits
   apiBaseUrl: string
   language: string
-  experimentalModels: string[]
+  oldLLMModelPrefixes: string[]
 
   constructor(
     debug: boolean,
@@ -33,8 +33,8 @@ export class Options {
     reviewCommentLGTM = false,
     pathFilters: string[] | null = null,
     systemMessage = '',
-    openaiLightModel = 'gpt-4.1-mini',
-    openaiHeavyModel = 'gpt-4.1-mini',
+    openaiLightModel = 'gpt-5-mini',
+    openaiHeavyModel = 'gpt-5-mini',
     openaiModelTemperature = '0.0',
     openaiRetries = '3',
     openaiTimeoutMS = '120000',
@@ -42,7 +42,7 @@ export class Options {
     githubConcurrencyLimit = '6',
     apiBaseUrl = 'https://api.openai.com/v1',
     language = 'ja-JP',
-    experimentalModelsInput: string[] | null = null
+    oldLLMModelPrefixes: string[] | null = null
   ) {
     this.debug = debug
     this.disableReview = disableReview
@@ -63,7 +63,7 @@ export class Options {
     this.heavyTokenLimits = new TokenLimits(openaiHeavyModel)
     this.apiBaseUrl = apiBaseUrl
     this.language = language
-    this.experimentalModels = experimentalModelsInput ?? []
+    this.oldLLMModelPrefixes = ['gpt-3.5', 'gpt-4.1']
   }
 
   // print all options using core.info
@@ -95,8 +95,8 @@ export class Options {
     return ok
   }
 
-  isExperimentalModel(model: string): boolean {
-        return this.experimentalModels.includes(model)
+  isOldLLMModel(model: string): boolean {
+    return this.oldLLMModelPrefixes.some(prefix => model.startsWith(prefix));
   }
 }
 
@@ -149,7 +149,7 @@ export class OpenAIOptions {
   model: string
   tokenLimits: TokenLimits
 
-  constructor(model = 'gpt-4.1-mini', tokenLimits: TokenLimits | null = null) {
+  constructor(model = 'gpt-5-mini', tokenLimits: TokenLimits | null = null) {
     this.model = model
     if (tokenLimits != null) {
       this.tokenLimits = tokenLimits
