@@ -217,9 +217,6 @@ If the comment contains instructions/requests for you, please comply.
 For example, if the comment is asking you to generate documentation 
 comments on the code, in your reply please generate the required code.
 
-In your reply, please make sure to begin the reply by tagging the user 
-with "@user".
-
 ## Comment format
 
 \`user: comment\`

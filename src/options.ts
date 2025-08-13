@@ -22,6 +22,7 @@ export class Options {
   heavyTokenLimits: TokenLimits
   apiBaseUrl: string
   language: string
+  oldLLMModelPrefixes: string[]
 
   constructor(
     debug: boolean,
@@ -32,15 +33,16 @@ export class Options {
     reviewCommentLGTM = false,
     pathFilters: string[] | null = null,
     systemMessage = '',
-    openaiLightModel = 'gpt-3.5-turbo',
-    openaiHeavyModel = 'gpt-3.5-turbo',
+    openaiLightModel = 'gpt-5-mini',
+    openaiHeavyModel = 'gpt-5-mini',
     openaiModelTemperature = '0.0',
     openaiRetries = '3',
     openaiTimeoutMS = '120000',
     openaiConcurrencyLimit = '6',
     githubConcurrencyLimit = '6',
     apiBaseUrl = 'https://api.openai.com/v1',
-    language = 'en-US'
+    language = 'ja-JP',
+    oldLLMModelPrefixes: string[] | null = null
   ) {
     this.debug = debug
     this.disableReview = disableReview
@@ -61,6 +63,7 @@ export class Options {
     this.heavyTokenLimits = new TokenLimits(openaiHeavyModel)
     this.apiBaseUrl = apiBaseUrl
     this.language = language
+    this.oldLLMModelPrefixes = ['gpt-3.5', 'gpt-4.1']
   }
 
   // print all options using core.info
@@ -90,6 +93,10 @@ export class Options {
     const ok = this.pathFilters.check(path)
     info(`checking path: ${path} => ${ok}`)
     return ok
+  }
+
+  isOldLLMModel(model: string): boolean {
+    return this.oldLLMModelPrefixes.some(prefix => model.startsWith(prefix));
   }
 }
 
@@ -142,7 +149,7 @@ export class OpenAIOptions {
   model: string
   tokenLimits: TokenLimits
 
-  constructor(model = 'gpt-3.5-turbo', tokenLimits: TokenLimits | null = null) {
+  constructor(model = 'gpt-5-mini', tokenLimits: TokenLimits | null = null) {
     this.model = model
     if (tokenLimits != null) {
       this.tokenLimits = tokenLimits
